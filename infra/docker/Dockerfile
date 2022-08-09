@@ -9,7 +9,9 @@ RUN go build -ldflags "-X main.buid=${BUILD_REF}"
 
 FROM alpine:3.16
 ARG BUILD_REF
-COPY --from=buid_service /service /service/service
+RUN addgroup -g 1000 -S service && \
+    adduser -u 1000 -h /service -G service -S service
+COPY --from=buid_service --chown=service:service /service /service
 WORKDIR /service
-
-CMD ["./service"]
+USER service
+CMD ["./ultimateservice"]

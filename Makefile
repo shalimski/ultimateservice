@@ -12,7 +12,7 @@ all: service
 service:
 	docker build \
 		-f infra/docker/Dockerfile \
-		-t sevice-amd64:${VERSION} \
+		-t service-amd64:${VERSION} \
 		--build-arg BUILD_REF=${VERSION} \
 		.
 
@@ -25,6 +25,13 @@ kind-up:
 kind-down:
 	kind delete cluster --name $(KIND_CLUSTER)
 
+kind-load:
+	kind load docker-image service-amd64:$(VERSION) --name $(KIND_CLUSTER)
+
+kind-apply:
+	cat infra/k8s/base/service-pod/base-service.yaml | kubectl apply -f -
+
 kind-status:
 	kubectl get nodes -o wide
 	kubectl get svc -o wide
+	kubectl get pods -o wide --watch --all-namespaces
