@@ -35,3 +35,6 @@ kind-status:
 	kubectl get nodes -o wide
 	kubectl get svc -o wide
 	kubectl get pods -o wide --watch --all-namespaces
+
+kind-logs:
+	kubectl logs -l app=service --all-containers=true -f --tail=100 --namespace=service-system
