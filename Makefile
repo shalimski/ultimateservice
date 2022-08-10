@@ -30,7 +30,7 @@ kind-load:
 	kind load docker-image service-amd64:$(VERSION) --name $(KIND_CLUSTER)
 
 kind-apply:
-	cat infra/k8s/base/service-pod/base-service.yaml | kubectl apply -f -
+	kustomize build infra/k8s/kind/service-pod | kubectl apply -f -
 
 kind-status:
 	kubectl get nodes -o wide
@@ -49,3 +49,8 @@ kind-restart:
 	kubectl rollout restart deployment service-pod
 
 kind-update: all kind-load kind-restart
+
+kind-update-apply: all kind-load kind-apply
+
+kind-describe:
+	kubectl describe pod -l app=service

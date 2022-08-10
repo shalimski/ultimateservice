@@ -4,13 +4,16 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
+
+	_ "go.uber.org/automaxprocs"
 )
 
 var build = "develop"
 
 func main() {
-	log.Println("starting service...", build)
+	log.Printf("starting service build[%s] CPU[%d]\n", build, runtime.NumCPU())
 	defer log.Println("service ended")
 
 	shutdown := make(chan os.Signal, 1)
