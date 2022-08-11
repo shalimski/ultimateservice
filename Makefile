@@ -7,12 +7,12 @@ build:
 VERSION := 1.0
 KIND_CLUSTER := starter-cluster  
 
-all: service
+all: sales-api
 
-service:
+sales-api:
 	docker build \
-		-f infra/docker/Dockerfile \
-		-t service-amd64:${VERSION} \
+		-f infra/docker/Dockerfile.sales-api \
+		-t sales-api-amd64:${VERSION} \
 		--build-arg BUILD_REF=${VERSION} \
 		.
 
@@ -21,16 +21,17 @@ kind-up:
 		--image kindest/node:v1.24.3 \
 		--name $(KIND_CLUSTER) \
 		--config infra/k8s/kind/kind-config.yaml
-	kubectl config set-context --current --namespace=service-system
+	kubectl config set-context --current --namespace=sales-api-system
 
 kind-down:
 	kind delete cluster --name $(KIND_CLUSTER)
 
 kind-load:
-	kind load docker-image service-amd64:$(VERSION) --name $(KIND_CLUSTER)
+	cd infra/k8s/kind/sales-api-pod; kustomize edit set image sales-api-image=sales-api-amd64:$(VERSION)
+	kind load docker-image sales-api-amd64:$(VERSION) --name $(KIND_CLUSTER)
 
 kind-apply:
-	kustomize build infra/k8s/kind/service-pod | kubectl apply -f -
+	kustomize build infra/k8s/kind/sales-api-pod | kubectl apply -f -
 
 kind-status:
 	kubectl get nodes -o wide
@@ -43,14 +44,14 @@ kind-status-all:
 	kubectl get pods -o wide --watch --all-namespaces
 
 kind-logs:
-	kubectl logs -l app=service --all-containers=true -f --tail=100
+	kubectl logs -l app=sales-api --all-containers=true -f --tail=100
 
 kind-restart:
-	kubectl rollout restart deployment service-pod
+	kubectl rollout restart deployment sales-api-pod
 
 kind-update: all kind-load kind-restart
 
 kind-update-apply: all kind-load kind-apply
 
 kind-describe:
-	kubectl describe pod -l app=service
+	kubectl describe pod -l app=sales-api
