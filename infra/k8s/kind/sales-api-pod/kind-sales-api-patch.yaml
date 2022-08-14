@@ -16,7 +16,7 @@ spec:
         app: sales-api
     spec:
       containers:
-      - name: sales-api-api
+      - name: sales-api
         resources:
           limits:
             cpu: "2000m" # Up to 2 full cores

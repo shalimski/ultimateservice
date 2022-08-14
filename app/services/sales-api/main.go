@@ -1,11 +1,14 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
 
+	"github.com/shalimski/ultimateservice/app/services/sales-api/handlers"
+	"github.com/shalimski/ultimateservice/internal/config"
 	"github.com/shalimski/ultimateservice/pkg/logger"
 	_ "go.uber.org/automaxprocs"
 )
@@ -19,6 +22,17 @@ func main() {
 	}
 
 	defer log.Sync()
+
+	cfg := config.New()
+	log.Infof("configuration %+v", cfg)
+
+	debugMux := handlers.DebugMux()
+
+	go func() {
+		if err := http.ListenAndServe(cfg.DebugURI, debugMux); err != nil {
+			log.Errorw("debug router is closer", err)
+		}
+	}()
 
 	log.Infof("starting sales-api build[%s] CPU[%d]\n", build, runtime.NumCPU())
 

@@ -4,6 +4,9 @@ run:
 build:
 	go build -ldflags "-X main.build=local"
 
+lint:
+	golangci-lint run ./...
+
 VERSION := 1.0
 KIND_CLUSTER := starter-cluster  
 
