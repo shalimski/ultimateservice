@@ -6,10 +6,12 @@ import (
 	"net/http/pprof"
 
 	"github.com/labstack/echo/v4"
+	"github.com/shalimski/ultimateservice/app/services/sales-api/handlers/debug/checkgrp"
+	"go.uber.org/zap"
 )
 
 // DebugMux pprof handlers for profiling
-func DebugMux() *http.ServeMux {
+func DebugMux(build string, log *zap.SugaredLogger) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -19,13 +21,19 @@ func DebugMux() *http.ServeMux {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	mux.Handle("/debug/vars", expvar.Handler())
 
+	chg := checkgrp.Handlers{
+		Build: build,
+		Log:   log,
+	}
+
+	mux.HandleFunc("/debug/liveness", chg.Liveness)
+	mux.HandleFunc("/debug/readyness", chg.Readiness)
+
 	return mux
 }
 
 func APIMux() *echo.Echo {
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+
 	return e
 }

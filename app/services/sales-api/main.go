@@ -28,7 +28,7 @@ func main() {
 	cfg := config.New()
 	log.Infof("configuration %+v", cfg)
 
-	debugMux := handlers.DebugMux()
+	debugMux := handlers.DebugMux(build, log)
 
 	go func() {
 		if err := http.ListenAndServe(cfg.DebugURI, debugMux); err != nil {
