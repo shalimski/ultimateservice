@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 	"github.com/shalimski/ultimateservice/internal/config"
 	"github.com/shalimski/ultimateservice/pkg/logger"
 	_ "go.uber.org/automaxprocs"
+	"go.uber.org/zap"
 )
 
 var build = "develop"
@@ -21,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	defer log.Sync()
+	defer log.Sync() //nolint:errcheck
 
 	cfg := config.New()
 	log.Infof("configuration %+v", cfg)
@@ -38,7 +40,37 @@ func main() {
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-	<-shutdown
 
-	log.Info("stopping sales-api")
+	api := http.Server{
+		Addr:         cfg.Host,
+		Handler:      nil,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		IdleTimeout:  cfg.IdleTimeout,
+		ErrorLog:     zap.NewStdLog(log.Desugar()),
+	}
+
+	serverErrors := make(chan error, 1)
+
+	go func() {
+		log.Infow("startup", "status", "api handler started", "host", api.Addr)
+		serverErrors <- api.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErrors:
+		log.Errorf("server error: %w", err)
+
+	case sig := <-shutdown:
+		log.Infow("shutdown", "status", "shutdown started", "signal", sig)
+		defer log.Infow("shutdown", "status", "shutdown complete", "signal", sig)
+
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+
+		if err := api.Shutdown(ctx); err != nil {
+			api.Close()
+			log.Errorw("could not stop server gracefully", "error", err)
+		}
+	}
 }
