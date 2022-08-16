@@ -4,8 +4,11 @@ import (
 	"expvar"
 	"net/http"
 	"net/http/pprof"
+
+	"github.com/labstack/echo/v4"
 )
 
+// DebugMux pprof handlers for profiling
 func DebugMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -17,4 +20,12 @@ func DebugMux() *http.ServeMux {
 	mux.Handle("/debug/vars", expvar.Handler())
 
 	return mux
+}
+
+func APIMux() *echo.Echo {
+	e := echo.New()
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Hello, World!")
+	})
+	return e
 }
