@@ -4,9 +4,10 @@ import (
 	"expvar"
 	"net/http"
 	"net/http/pprof"
+	"os"
 
-	"github.com/labstack/echo/v4"
 	"github.com/shalimski/ultimateservice/app/services/sales-api/handlers/debug/checkgrp"
+	"github.com/shalimski/ultimateservice/app/web"
 	"go.uber.org/zap"
 )
 
@@ -32,8 +33,23 @@ func DebugMux(build string, log *zap.SugaredLogger) *http.ServeMux {
 	return mux
 }
 
-func APIMux() *echo.Echo {
-	e := echo.New()
+type APIMuxConfig struct {
+	Shutdown chan os.Signal
+	Log      *zap.SugaredLogger
+}
 
-	return e
+func APIMux(cfg APIMuxConfig) *web.App {
+	app := web.NewApp(cfg.Shutdown)
+	v1(app, cfg)
+
+	return app
+}
+
+// v1 binds all the version 1 routes
+func v1(app *web.App, cfg APIMuxConfig) {
+	const version = "v1"
+
+	// create handlers
+
+	app.Handle(http.MethodGet, version, "/test", nil)
 }
