@@ -14,12 +14,14 @@ type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) e
 type App struct {
 	*httptreemux.ContextMux
 	shutdown chan os.Signal
+	mw       []Middleware
 }
 
-func NewApp(shutdown chan os.Signal) *App {
+func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
 	return &App{
 		ContextMux: httptreemux.NewContextMux(),
 		shutdown:   shutdown,
+		mw:         mw,
 	}
 }
 
@@ -27,7 +29,13 @@ func (a *App) SignalShutdown() {
 	a.shutdown <- syscall.SIGTERM
 }
 
-func (a *App) Handle(method, group, path string, handler Handler) {
+func (a *App) Handle(method, group, path string, handler Handler, mw ...Middleware) {
+	// specific middleware
+	handler = wrap(mw, handler)
+
+	// application middleware
+	handler = wrap(a.mw, handler)
+
 	h := func(w http.ResponseWriter, r *http.Request) {
 		// prepoc
 
