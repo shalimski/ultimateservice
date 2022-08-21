@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/dimfeld/httptreemux/v5 v5.4.0
+	github.com/google/uuid v1.3.0
 	github.com/ilyakaznacheev/cleanenv v1.3.0
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/zap v1.22.0
