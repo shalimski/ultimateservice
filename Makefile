@@ -1,3 +1,16 @@
+# For testing load on the service.
+# go install github.com/rakyll/hey@latest
+# hey -m GET -c 100 -n 10000 http://localhost:9020/
+#
+# Access metrics (9021)
+# go install github.com/divan/expvarmon@latest
+# expvarmon -ports=":9021" -endpoint="/debug/vars" -vars="build,requests,goroutines,errors,panics,mem:memstats.Alloc"
+#
+# To generate a private/public key PEM file.
+# openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
+# openssl rsa -pubout -in private.pem -out public.pem
+# or use make generatekey
+
 run:
 	go run app/services/sales-api/main.go
 
@@ -6,6 +19,9 @@ build:
 
 lint:
 	golangci-lint run ./...
+
+generatekeys:
+	go run app/tooling/admin/main.go -bits 4096
 
 VERSION := 1.0
 KIND_CLUSTER := starter-cluster  
