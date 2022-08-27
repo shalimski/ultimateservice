@@ -7,7 +7,11 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"io"
 	"os"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var bits = *flag.Uint("bits", 2048, "bit size for private key generation")
@@ -66,6 +70,54 @@ func genKey() error {
 	if err := pem.Encode(publicFile, &publicBlock); err != nil {
 		return fmt.Errorf("failed to encode public: %w", err)
 	}
+
+	return nil
+}
+
+func genToken() error {
+	keyName := "infra/keys/c2e055bb-f637-4cc3-9b4a-916a8b31304a.pem"
+
+	file, err := os.Open(keyName)
+	if err != nil {
+		return fmt.Errorf("opening private key: %w", err)
+	}
+	defer file.Close()
+
+	privatePEM, err := io.ReadAll(io.LimitReader(file, 1024*1024))
+	if err != nil {
+		return fmt.Errorf("reading private key: %w", err)
+	}
+
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privatePEM)
+	if err != nil {
+		return fmt.Errorf("parsing private key: %w", err)
+	}
+
+	claims := struct {
+		jwt.RegisteredClaims
+		Roles []string
+	}{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "sales-api",
+			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+			Subject:   "token",
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(720 * time.Hour)),
+		},
+		Roles: []string{"admin"},
+	}
+
+	method := jwt.GetSigningMethod("RS256")
+	token := jwt.NewWithClaims(method, claims)
+	token.Header["kid"] = "c2e055bb-f637-4cc3-9b4a-916a8b31304a"
+
+	tokenString, err := token.SignedString(privateKey)
+	if err != nil {
+		return fmt.Errorf("generating token: %w", err)
+	}
+
+	fmt.Println("========= TOKEN BEGIN =========")
+	fmt.Println(tokenString)
+	fmt.Println("========= TOKEN END ===========")
 
 	return nil
 }
