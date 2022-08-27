@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -19,7 +20,7 @@ var bits = *flag.Uint("bits", 2048, "bit size for private key generation")
 func main() {
 	flag.Parse()
 
-	err := genKey()
+	err := genToken()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -75,6 +76,8 @@ func genKey() error {
 }
 
 func genToken() error {
+	// ======== read private key ========
+
 	keyName := "infra/keys/c2e055bb-f637-4cc3-9b4a-916a8b31304a.pem"
 
 	file, err := os.Open(keyName)
@@ -92,6 +95,8 @@ func genToken() error {
 	if err != nil {
 		return fmt.Errorf("parsing private key: %w", err)
 	}
+
+	// ======== generate token ========
 
 	claims := struct {
 		jwt.RegisteredClaims
@@ -118,6 +123,41 @@ func genToken() error {
 	fmt.Println("========= TOKEN BEGIN =========")
 	fmt.Println(tokenString)
 	fmt.Println("========= TOKEN END ===========")
+	fmt.Println()
+
+	// ======== token validation ========
+
+	parser := jwt.NewParser(jwt.WithValidMethods([]string{"RS256"}))
+
+	var parsedClaims struct {
+		jwt.RegisteredClaims
+		Roles []string
+	}
+
+	keyFunc := func(t *jwt.Token) (any, error) {
+		kid, ok := t.Header["kid"]
+		if !ok {
+			return nil, errors.New("missing kid key in token header")
+		}
+
+		_, ok = kid.(string)
+		if !ok {
+			return nil, errors.New("kid key must be a string")
+		}
+
+		return &privateKey.PublicKey, nil
+	}
+
+	parsedToken, err := parser.ParseWithClaims(tokenString, &parsedClaims, keyFunc)
+	if err != nil {
+		return fmt.Errorf("parsing token: %w", err)
+	}
+
+	if !parsedToken.Valid {
+		return errors.New("token is invalid")
+	}
+
+	fmt.Println("Token is valid")
 
 	return nil
 }
