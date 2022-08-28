@@ -11,7 +11,9 @@ FROM alpine:3.16
 ARG BUILD_REF
 RUN addgroup -g 1000 -S sales-api && \
     adduser -u 1000 -h /service -G sales-api -S sales-api
+
 COPY --from=buid_sales-api --chown=sales-api:sales-api /service/app/services/sales-api/sales-api /service/sales-api
+COPY --from=buid_sales-api --chown=sales-api:sales-api /service/app/services/infra/keys /service/infra/keys/
 WORKDIR /service
 USER sales-api
 CMD ["./sales-api"]

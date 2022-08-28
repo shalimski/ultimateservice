@@ -13,7 +13,11 @@ type Config struct {
 	WriteTimeout    time.Duration `env:"WRITETIMEOUT" env-default:"20s"`
 	IdleTimeout     time.Duration `env:"IDLETIMEOUT" env-default:"120s"`
 	ShutdownTimeout time.Duration `env:"SHUTDOWNTIMEOUT" env-default:"20s"`
+	AuthKeysFolder  string        `env:"AUTH_KEYFOLDER" env-default:"infra/keys/"`
+	AuthActiveKID   string        `env:"AUTH_ACTIVEKID" env-default:"c2e055bb-f637-4cc3-9b4a-916a8b31304a"`
 }
+
+type auth struct{}
 
 func New() Config {
 	var cfg Config

@@ -8,6 +8,7 @@ import (
 
 	"github.com/shalimski/ultimateservice/app/services/sales-api/handlers/debug/checkgrp"
 	"github.com/shalimski/ultimateservice/app/web"
+	"github.com/shalimski/ultimateservice/business/sys/auth"
 	"github.com/shalimski/ultimateservice/business/web/mid"
 	"go.uber.org/zap"
 )
@@ -37,6 +38,7 @@ func DebugMux(build string, log *zap.SugaredLogger) *http.ServeMux {
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
+	Auth     *auth.Auth
 }
 
 func APIMux(cfg APIMuxConfig) *web.App {

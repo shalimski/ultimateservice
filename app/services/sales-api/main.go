@@ -9,8 +9,10 @@ import (
 	"syscall"
 
 	"github.com/shalimski/ultimateservice/app/services/sales-api/handlers"
+	"github.com/shalimski/ultimateservice/business/sys/auth"
 	"github.com/shalimski/ultimateservice/internal/config"
 	"github.com/shalimski/ultimateservice/pkg/logger"
+	"github.com/shalimski/ultimateservice/pkg/logger/keystore"
 	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
 )
@@ -28,6 +30,20 @@ func main() {
 	cfg := config.New()
 	log.Infof("configuration %+v", cfg)
 
+	// auth support
+	ks, err := keystore.NewFS(os.DirFS(cfg.AuthKeysFolder))
+	if err != nil {
+		log.Errorw("reading keys", err)
+		return
+	}
+
+	auth, err := auth.NewAuth(cfg.AuthActiveKID, ks)
+	if err != nil {
+		log.Errorf("init auth: %w", err)
+		return
+	}
+
+	// debug handlers
 	debugMux := handlers.DebugMux(build, log)
 
 	go func() {
@@ -44,6 +60,7 @@ func main() {
 	apiMux := handlers.APIMux(handlers.APIMuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
+		Auth:     auth,
 	})
 
 	api := http.Server{
