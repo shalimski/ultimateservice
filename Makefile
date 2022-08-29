@@ -14,6 +14,9 @@
 run:
 	go run app/services/sales-api/main.go
 
+test:
+	go test ./... -count=1 -cover
+
 build:
 	go build -ldflags "-X main.build=local"
 

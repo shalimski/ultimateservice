@@ -36,12 +36,12 @@ func NewAuth(activeKID string, keyLookup KeyLookup) (*Auth, error) {
 			return nil, errors.New("missing kid key in token header")
 		}
 
-		_, ok = kid.(string)
+		kidStr, ok := kid.(string)
 		if !ok {
 			return nil, errors.New("kid key must be a string")
 		}
 
-		return keyLookup.PublicKey, nil
+		return keyLookup.PublicKey(kidStr)
 	}
 
 	parser := jwt.Parser{
