@@ -1,6 +1,7 @@
 package auth_test
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"testing"
@@ -62,6 +63,27 @@ func TestAuthExpired(t *testing.T) {
 
 	_, err = authstore.ValidateToken(token)
 	assert.Error(t, err)
+}
+
+func TestClaims(t *testing.T) {
+	claims := auth.Claims{
+		Roles: []string{auth.RoleUser},
+	}
+
+	ctx := context.Background()
+
+	ctx = auth.SetClaims(ctx, claims)
+
+	claims, err := auth.GetClaims(ctx)
+	assert.NoError(t, err)
+
+	got := claims.Authorized("fake", auth.RoleAdmin)
+
+	assert.False(t, got)
+
+	got = claims.Authorized(auth.RoleUser)
+
+	assert.True(t, got)
 }
 
 // =============================================================================
