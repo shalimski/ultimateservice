@@ -53,6 +53,8 @@ kind-load:
 	kind load docker-image sales-api-amd64:$(VERSION) --name $(KIND_CLUSTER)
 
 kind-apply:
+	kustomize build infra/k8s/kind/db-pod | kubectl apply -f -
+	kubectl wait --namespace=db-system --timeout=60s --for=condition=Available deployment/db-pod
 	kustomize build infra/k8s/kind/sales-api-pod | kubectl apply -f -
 
 kind-status:

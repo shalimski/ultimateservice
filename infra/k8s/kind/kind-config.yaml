@@ -7,3 +7,5 @@ nodes:
     hostPort: 9020
   - containerPort: 9021
     hostPort: 9021
+  - containerPort: 5432
+    hostPort: 5432
