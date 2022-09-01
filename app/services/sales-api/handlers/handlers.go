@@ -6,6 +6,7 @@ import (
 	"net/http/pprof"
 	"os"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/shalimski/ultimateservice/app/services/sales-api/handlers/debug/checkgrp"
 	"github.com/shalimski/ultimateservice/app/web"
 	"github.com/shalimski/ultimateservice/business/sys/auth"
@@ -14,7 +15,7 @@ import (
 )
 
 // DebugMux pprof handlers for profiling
-func DebugMux(build string, log *zap.SugaredLogger) *http.ServeMux {
+func DebugMux(build string, log *zap.SugaredLogger, db *sqlx.DB) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -27,6 +28,7 @@ func DebugMux(build string, log *zap.SugaredLogger) *http.ServeMux {
 	chg := checkgrp.Handlers{
 		Build: build,
 		Log:   log,
+		DB:    db,
 	}
 
 	mux.HandleFunc("/debug/liveness", chg.Liveness)
@@ -39,6 +41,7 @@ type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
 	Auth     *auth.Auth
+	DB       *sqlx.DB
 }
 
 func APIMux(cfg APIMuxConfig) *web.App {

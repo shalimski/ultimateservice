@@ -10,6 +10,7 @@ import (
 
 	"github.com/shalimski/ultimateservice/app/services/sales-api/handlers"
 	"github.com/shalimski/ultimateservice/business/sys/auth"
+	"github.com/shalimski/ultimateservice/business/sys/database"
 	"github.com/shalimski/ultimateservice/internal/config"
 	"github.com/shalimski/ultimateservice/pkg/logger"
 	"github.com/shalimski/ultimateservice/pkg/logger/keystore"
@@ -43,8 +44,30 @@ func main() {
 		return
 	}
 
+	// Database Support
+
+	log.Infow("startup", "status", "initializing database support", "host", cfg.DB.Host)
+
+	db, err := database.Open(database.Config{
+		User:         cfg.DB.User,
+		Password:     cfg.DB.Password,
+		Host:         cfg.DB.Host,
+		Name:         cfg.DB.Name,
+		MaxIdleConns: cfg.DB.MaxIdleConns,
+		MaxOpenConns: cfg.DB.MaxOpenConns,
+		DisableTLS:   cfg.DB.DisableTLS,
+	})
+	if err != nil {
+		log.Errorf("connecting to db: %w", err)
+		return
+	}
+	defer func() {
+		log.Infow("shutdown", "status", "stopping database support", "host", cfg.DB.Host)
+		db.Close()
+	}()
+
 	// debug handlers
-	debugMux := handlers.DebugMux(build, log)
+	debugMux := handlers.DebugMux(build, log, db)
 
 	go func() {
 		if err := http.ListenAndServe(cfg.DebugURI, debugMux); err != nil {
@@ -61,6 +84,7 @@ func main() {
 		Shutdown: shutdown,
 		Log:      log,
 		Auth:     auth,
+		DB:       db,
 	})
 
 	api := http.Server{
