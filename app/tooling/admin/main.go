@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -13,6 +14,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/shalimski/ultimateservice/business/data/schema"
+	"github.com/shalimski/ultimateservice/business/sys/database"
+	"github.com/shalimski/ultimateservice/internal/config"
 )
 
 var bits = *flag.Uint("bits", 2048, "bit size for private key generation")
@@ -20,7 +24,7 @@ var bits = *flag.Uint("bits", 2048, "bit size for private key generation")
 func main() {
 	flag.Parse()
 
-	err := genToken()
+	err := migrate()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -159,5 +163,33 @@ func genToken() error {
 
 	fmt.Println("Token is valid")
 
+	return nil
+}
+
+func migrate() error {
+	cfg := config.New()
+
+	dbcfg := database.Config{
+		User:       cfg.DB.User,
+		Password:   cfg.DB.Password,
+		Host:       cfg.DB.Host,
+		Name:       cfg.DB.Name,
+		DisableTLS: cfg.DB.DisableTLS,
+	}
+
+	db, err := database.Open(dbcfg)
+	if err != nil {
+		return fmt.Errorf("connect database: %w", err)
+	}
+	defer db.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := schema.Migrate(ctx, db); err != nil {
+		return fmt.Errorf("migrate database: %w", err)
+	}
+
+	fmt.Println("migrations complete")
 	return nil
 }
