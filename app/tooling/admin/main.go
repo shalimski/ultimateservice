@@ -190,6 +190,10 @@ func migrate() error {
 		return fmt.Errorf("migrate database: %w", err)
 	}
 
-	fmt.Println("migrations complete")
+	if err := schema.Seed(ctx, db); err != nil {
+		return fmt.Errorf("seed database: %w", err)
+	}
+
+	fmt.Println("migrations and seeding complete")
 	return nil
 }
