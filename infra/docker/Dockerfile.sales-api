@@ -4,6 +4,9 @@ ARG BUILD_REF
 
 COPY . /service
 
+WORKDIR /service/app/tooling/admin
+RUN go build -ldflags "-X main.buid=${BUILD_REF}" -o sales-admin
+
 WORKDIR /service/app/services/sales-api
 RUN go build -ldflags "-X main.buid=${BUILD_REF}" -o sales-api
 
@@ -12,8 +15,9 @@ ARG BUILD_REF
 RUN addgroup -g 1000 -S sales-api && \
     adduser -u 1000 -h /service -G sales-api -S sales-api
 
+COPY --from=buid_sales-api --chown=sales-api:sales-api /service/app/tooling/admin/sales-admin /service/sales-admin
 COPY --from=buid_sales-api --chown=sales-api:sales-api /service/app/services/sales-api/sales-api /service/sales-api
-COPY --from=buid_sales-api --chown=sales-api:sales-api /service/app/services/infra/keys /service/infra/keys/
+COPY --from=buid_sales-api --chown=sales-api:sales-api /service/infra/keys /service/infra/keys/
 WORKDIR /service
 USER sales-api
 CMD ["./sales-api"]
